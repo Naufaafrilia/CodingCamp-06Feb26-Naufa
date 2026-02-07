@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo Pink-Naufa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 min-h-screen flex justify-center py-10">
+
+  <div class="bg-white w-[380px] rounded-2xl shadow-xl p-6 border border-pink-200">
+    
+    <!-- Header -->
+    <header class="mb-4 text-center">
+      <h1 class="text-3xl font-extrabold text-pink-600">💗 Todo List</h1>
+      <p class="text-xs text-pink-400">Plan your day beautifully</p>
+    </header>
+
+    <!-- Form -->
+    <form id="todoForm" class="flex gap-2 mb-4">
+      <input id="todoInput" type="text" placeholder="Write your todo" class="border border-pink-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-pink-400" required/>
+      <input id="todoDate" type="date" class="border border-pink-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-pink-400" required/>
+      <button type="submit" class="bg-pink-500 text-white px-4 rounded-lg hover:bg-pink-600 transition">➕</button>
+    </form>
+
+    <!-- Status Filter -->
+    <div class="flex justify-between mb-4 text-sm">
+        <button type="submit" class="bg-pink-500 text-white px-4 rounded-lg hover:bg-pink-600 transition">filterButtons</button>
+      <button type="button" data-filter="all" class="filter-btn bg-pink-500 text-white px-3 py-1 rounded-lg">All</button>
+      <button type="button" data-filter="active" class="filter-btn bg-pink-100 text-pink-600 px-3 py-1 rounded-lg">Active</button>
+      <button type="button" data-filter="completed" class="filter-btn bg-pink-100 text-pink-600 px-3 py-1 rounded-lg">Completed</button>
+    </div>
+
+    <!-- Clear All -->
+    <div class="flex justify-end mb-3">
+      <button id="clearBtn" class="bg-pink-100 text-pink-600 px-3 py-1 rounded-lg hover:bg-pink-200 transition">Clear All</button>
+    </div>
+
+    <!-- Todo List -->
+    <ul id="todoList" class="space-y-2 text-sm text-pink-800 mt-2">
+      <li class="text-pink-300 italic text-center">No todo available</li>
+    </ul>
+
+    <!-- Footer -->
+    <footer class="mt-6 text-center text-xs text-pink-400">
+      © 2026 Naufa Pink Todo App 💕
+    </footer>
+
+  </div>
+
+  <script>
+    const todoForm = document.getElementById("todoForm");
+    const todoInput = document.getElementById("todoInput");
+    const todoDate = document.getElementById("todoDate");
+    const todoList = document.getElementById("todoList");
+    const clearBtn = document.getElementById("clearBtn");
+    const filterButtons = document.querySelectorAll(".filter-btn");
+
+    let todos = JSON.parse(localStorage.getItem("todos")) || [];
+    let currentFilter = "all";
+
+    // Format tanggal dd/mm/yy
+    function formatDate(dateValue){
+      const d = new Date(dateValue);
+      const day = String(d.getDate()).padStart(2,"0");
+      const month = String(d.getMonth()+1).padStart(2,"0");
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    }
+
+    function saveTodos(){
+      localStorage.setItem("todos", JSON.stringify(todos));
+    }
+
+    function renderTodos(){
+      todoList.innerHTML = "";
+      let hasTodo = false;
+
+      todos.forEach((todo,index)=>{
+        // Filter status
+        if(currentFilter==="active" && todo.completed) return;
+        if(currentFilter==="completed" && !todo.completed) return;
+
+        hasTodo = true;
+
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center bg-pink-50 border border-pink-200 px-3 py-2 rounded-lg";
+
+        // Left side: checkbox + text
+        const divLeft = document.createElement("div");
+        divLeft.className = "flex items-center gap-2";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "accent-pink-500";
+        checkbox.checked = todo.completed;
+        checkbox.addEventListener("change", () => {
+          todos[index].completed = !todos[index].completed;
+          saveTodos();
+          renderTodos();
+        });
+
+        const textDiv = document.createElement("div");
+        const pText = document.createElement("p");
+        pText.className = `font-semibold ${todo.completed?'line-through text-pink-600':'text-pink-800'}`;
+        pText.textContent = todo.text;
+
+        const pDate = document.createElement("p");
+        pDate.className = "text-xs text-pink-400";
+        pDate.textContent = todo.formattedDate;
+
+        textDiv.appendChild(pText);
+        textDiv.appendChild(pDate);
+
+        divLeft.appendChild(checkbox);
+        divLeft.appendChild(textDiv);
+
+        // Delete button
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "✖";
+        delBtn.className = "text-pink-400 hover:text-pink-600";
+        delBtn.addEventListener("click", ()=>{
+          todos.splice(index,1);
+          saveTodos();
+          renderTodos();
+        });
+
+        li.appendChild(divLeft);
+        li.appendChild(delBtn);
+        todoList.appendChild(li);
+      });
+
+      if(!hasTodo){
+        todoList.innerHTML='<li class="text-pink-300 text-center italic">No todo available</li>';
+      }
+    }
+
+    // Add todo
+    todoForm.addEventListener("submit", e=>{
+      e.preventDefault();
+      if(!todoInput.value || !todoDate.value) return;
+      todos.push({
+        text: todoInput.value,
+        date: todoDate.value,
+        formattedDate: formatDate(todoDate.value),
+        completed: false
+      });
+      saveTodos();
+      todoForm.reset();
+      renderTodos();
+    });
+
+    // Clear all
+    clearBtn.addEventListener("click", ()=>{
+      if(!confirm("Clear all todos? 💔")) return;
+      todos=[];
+      saveTodos();
+      renderTodos();
+    });
+
+    // Filter buttons
+    filterButtons.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        currentFilter = btn.dataset.filter;
+        filterButtons.forEach(b=>{
+          b.classList.remove("bg-pink-500","text-white");
+          b.classList.add("bg-pink-100","text-pink-600");
+        });
+        btn.classList.add("bg-pink-500","text-white");
+        btn.classList.remove("bg-pink-100","text-pink-600");
+        renderTodos();
+      });
+    });
+
+    // Init
+    renderTodos();
+  </script>
+
+</body>
+</html>
